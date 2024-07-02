@@ -40,9 +40,11 @@ class controller_auth extends Controller
             // Jika pengguna memiliki peran 'admin', arahkan ke halaman dashboard
             if ($user->role === 'admin') {
                 return redirect()->route('dashboard')->with('success', 'Login berhasil.');
-            } elseif ($user->role === 'siswa') {
+            } 
+            elseif ($user->role === 'siswa') {
+                return back()->with('error', 'Username atau password salah.');
                 // Jika tidak, arahkan ke halaman yang sesuai untuk pengguna biasa
-                return redirect()->route('landing_page')->with('success', 'Login berhasil.');
+                // return redirect()->route('landing_page')->with('success', 'Login berhasil.');
             }
         } else {
             // Jika otentikasi gagal, kembalikan pengguna ke halaman login dengan pesan error
