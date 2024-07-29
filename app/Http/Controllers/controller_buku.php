@@ -176,9 +176,8 @@ class controller_buku extends Controller
         $similarities = $cbf->recommend($query, $documents);
 
         // ganti nilai 5 untuk jumlah rekomendasi
-        $topMatches = array_slice(array_keys($similarities), 0, 5, true);
-        // dd($similarities);
-
+        $topMatches = array_slice(array_keys($similarities), 0, 10, true);
+        
         $results = [];
         foreach ($topMatches as $index) {
             $results[] = [
@@ -186,6 +185,8 @@ class controller_buku extends Controller
                 'similarity' => $similarities[$index],
             ];
         }
+        
+        // return response()->json($results);
         $pengguna = M_user::paginate(200);
         $allBook = M_buku::paginate(1000);
 
@@ -226,30 +227,66 @@ class controller_buku extends Controller
         $recommendations = $cbfHelper->recommend($query, $documents);
 
         // Hasil relevan
-        $relevant = [20, 21, 13, 10, 4, 0, 24, 18, 5, 3, 14, 6, 2, 19]; // Contoh ID dokumen yang relevan
+        $terms = preg_split('/\s+/', $cbfHelper->preprocess($query));
+        $queryBuild = M_buku::query();
+
+        foreach ($terms as $term) {
+            $queryBuild->orWhere(function ($q) use ($term) {
+                $q->where('judul', 'LIKE', '%' . $term . '%')
+                    ->orWhere('sinopsis', 'LIKE', '%' . $term . '%');
+            });
+        }
+
+        $relevant = array_keys($queryBuild->pluck('id_buku')->toArray());
+        /** data buku relevant */
+        // dd(array_keys($relevant));
+
         $results = [];
-        $minimumSimilarities = [5, 10, 15, 20, 25, 30, 35, 40, 45];
+        $minimumSimilarities = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        $totalDocuments = count($recommendations);
 
         foreach ($minimumSimilarities as $minSim) {
             $threshold = $minSim / 100;
             $filteredRecommendations = array_filter($recommendations, function ($value) use ($threshold) {
+                // Log::info("Value : " . $value);
                 return $value >= $threshold;
             });
 
             $retrieved = array_keys($filteredRecommendations);
             $relevantRetrieved = array_intersect($retrieved, $relevant);
+            // dd($retrieved, $relevantRetrieved);
+
+            $resRelevant = [];
+            $resRetrieved = [];
+            $resRelevantRetrieved = [];
+            foreach ($relevant as $index) {
+                $resRelevant[] = [
+                    'book' => $books[$index]->judul,
+                ];
+            }
+            foreach ($retrieved as $index) {
+                $resRetrieved[] = [
+                    'book' => $books[$index]->judul,
+                ];
+            }
+            foreach ($relevantRetrieved as $index) {
+                $resRelevantRetrieved[] = [
+                    'book' => $books[$index]->judul,
+                ];
+            }
 
             // Log untuk debugging
-            Log::info('retrived: ' . print_r($retrieved, true));
             Log::info('Threshold: ' . $threshold);
-            Log::info('Filtered Recommendations: ' . print_r($filteredRecommendations, true));
-            Log::info('Relevant Retrieved: ' . print_r($relevantRetrieved, true));
+            Log::info('Relevant : ' . print_r($resRelevant, true));
+            Log::info('Retrived: ' . print_r($resRetrieved, true));
+            Log::info('Relevant Retrieved: ' . print_r($resRelevantRetrieved, true));
 
-            $evaluation = $evaluationHelper->evaluate($relevantRetrieved, $retrieved, $relevant);
+            $evaluation = $evaluationHelper->evaluate($relevantRetrieved, $retrieved, $relevant, $totalDocuments);
 
             $results[] = [
                 'minSim' => $minSim,
                 'precision' => $evaluation['precision'],
+                'accuracy' => $evaluation['accuracy'],
                 'recall' => $evaluation['recall'],
                 'fMeasure' => $evaluation['fMeasure']
             ];

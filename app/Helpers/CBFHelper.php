@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use Illuminate\Support\Facades\Log;
 use Sastrawi\Stemmer\StemmerFactory;
 use Sastrawi\StopWordRemover\StopWordRemoverFactory;
 
@@ -23,10 +24,15 @@ class CBFHelper
     // Preprocessing Text
     public function preprocess($text)
     {
+        // Log::info("Query Input : " . $text);
         $text = strtolower($text);
+        // Log::info("Case Folding : " . $text);
         $text = preg_replace('/[^\p{L}\p{N}\s-]/u', '', $text);
+        // Log::info("Symbol remove : " . $text);
         $text = $this->stopWordRemover->remove($text);
+        // Log::info("Stop word Remove : " . $text);
         $text = $this->stemmer->stem($text);
+        // Log::info("Stemming : " . $text);
 
         return $text;
     }
@@ -48,6 +54,7 @@ class CBFHelper
                 $bigrams[] = $terms[$i] . '-' . $terms[$i + 1];
             }
 
+            // Log::info("Bigrams : " . print_r($bigrams, true));
             $allTerms = array_merge($terms, $bigrams);
             $termCount = array_count_values($allTerms);
             $tf[$docId] = $termCount;
@@ -102,12 +109,17 @@ class CBFHelper
         $processedDocs = array_map([$this, 'preprocess'], $documents);
         $processedQuery = $this->preprocess($query);
 
+        /** sebelum prossesing */
+        // dd($query, $documents);
+
         array_unshift($processedDocs, $processedQuery);
         $tfidfDocs = $this->calculateTfIdf($processedDocs);
+
+        /** sesudah prosessing termasuk B-gram */
+        // dd($processedDocs, $tfidfDocs);
+
         $tfidfQuery = $tfidfDocs[0];
 
-        // test frasa ex:'gotong-royong'
-        // dd($tfidfDocs);
         array_shift($tfidfDocs);
 
         $similarities = [];
@@ -116,8 +128,9 @@ class CBFHelper
             $similarities[$docId] = $this->cosineSimilarity($tfidfQuery, $tfidfDoc);
         }
 
-        // dd($similarities);
         arsort($similarities);
+        /** Simailarity */
+        // dd($similarities);
 
         return $similarities;
     }

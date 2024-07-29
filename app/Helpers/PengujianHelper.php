@@ -33,17 +33,27 @@ class PengujianHelper
         return 2 * ($precision * $recall) / ($precision + $recall);
     }
 
+    // Menghitung Accuracy
+    public function accuracy($relevantRetrieved, $retrieved, $relevant, $totalDocuments)
+    {
+        $truePositive = count(array_intersect($relevantRetrieved, $relevant));
+        $trueNegative = $totalDocuments - (count($retrieved) + count($relevant) - $truePositive);
+        return ($truePositive + $trueNegative) / $totalDocuments;
+    }
+
     // Evaluasi
-    public function evaluate($relevantRetrieved, $retrieved, $relevant)
+    public function evaluate($relevantRetrieved, $retrieved, $relevant, $totalDocuments)
     {
         $precision = $this->precision($relevantRetrieved, $retrieved);
         $recall = $this->recall($relevantRetrieved, $relevant);
         $fMeasure = $this->fMeasure($precision, $recall);
+        $accuracy = $this->accuracy($relevantRetrieved, $retrieved, $relevant, $totalDocuments);
 
         return [
             'precision' => $precision,
             'recall' => $recall,
-            'fMeasure' => $fMeasure
+            'fMeasure' => $fMeasure,
+            'accuracy' => $accuracy
         ];
     }
 }
