@@ -186,6 +186,7 @@ class controller_buku extends Controller
             ];
         }
         
+        // dd($results);
         // return response()->json($results);
         $pengguna = M_user::paginate(200);
         $allBook = M_buku::paginate(1000);
@@ -219,10 +220,13 @@ class controller_buku extends Controller
         $evaluationHelper = new PengujianHelper();
 
         $query = $request->input('query');
-        $books = M_buku::all();
-        $documents = $books->map(function ($book) {
-            return $book->judul . ' ' . $book->sinopsis;
-        })->toArray();
+        $books = M_buku::all()->keyBy('id_buku');
+        $documents = [];
+        foreach ($books as $id => $book) {
+            $documents[$id] = $book->judul . ' ' . $book->sinopsis;
+        }
+
+        // dd($documents[41]);
 
         $recommendations = $cbfHelper->recommend($query, $documents);
 
@@ -232,12 +236,12 @@ class controller_buku extends Controller
 
         foreach ($terms as $term) {
             $queryBuild->orWhere(function ($q) use ($term) {
-                $q->where('judul', 'LIKE', '%' . $term . '%')
-                    ->orWhere('sinopsis', 'LIKE', '%' . $term . '%');
+                $q->where('judul', 'LIKE', '%' . $term . '%')->orWhere('sinopsis', 'LIKE', '%' . $term . '%');
             });
         }
-
-        $relevant = array_keys($queryBuild->pluck('id_buku')->toArray());
+        
+        $relevant = $queryBuild->pluck('id_buku')->toArray();
+        // dd($recommendations);
         /** data buku relevant */
         // dd(array_keys($relevant));
 
@@ -259,27 +263,35 @@ class controller_buku extends Controller
             $resRelevant = [];
             $resRetrieved = [];
             $resRelevantRetrieved = [];
-            foreach ($relevant as $index) {
-                $resRelevant[] = [
-                    'book' => $books[$index]->judul,
-                ];
+            foreach ($relevant as $id) {
+                if (isset($books[$id])) {
+                    $resRelevant[$id] = [
+                        'book' => $books[$id]->judul,
+                    ];
+                }
             }
-            foreach ($retrieved as $index) {
-                $resRetrieved[] = [
-                    'book' => $books[$index]->judul,
-                ];
+
+            foreach ($retrieved as $id) {
+                if (isset($books[$id])) {
+                    $resRetrieved[$id] = [
+                        'book' => $books[$id]->judul,
+                    ];
+                }
             }
-            foreach ($relevantRetrieved as $index) {
-                $resRelevantRetrieved[] = [
-                    'book' => $books[$index]->judul,
-                ];
+
+            foreach ($relevantRetrieved as $id) {
+                if (isset($books[$id])) {
+                    $resRelevantRetrieved[$id] = [
+                        'book' => $books[$id]->judul,
+                    ];
+                }
             }
 
             // Log untuk debugging
-            Log::info('Threshold: ' . $threshold);
-            Log::info('Relevant : ' . print_r($resRelevant, true));
-            Log::info('Retrived: ' . print_r($resRetrieved, true));
-            Log::info('Relevant Retrieved: ' . print_r($resRelevantRetrieved, true));
+            // Log::info('Threshold: ' . $threshold);
+            // Log::info('Relevant : ' . print_r($resRelevant, true));
+            // Log::info('Retrived: ' . print_r($resRetrieved, true));
+            // Log::info('Relevant Retrieved: ' . print_r($resRelevantRetrieved, true));
 
             $evaluation = $evaluationHelper->evaluate($relevantRetrieved, $retrieved, $relevant, $totalDocuments);
 

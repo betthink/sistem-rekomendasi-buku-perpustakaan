@@ -110,23 +110,26 @@ class CBFHelper
         $processedQuery = $this->preprocess($query);
 
         /** sebelum prossesing */
-        // dd($query, $documents);
+        // dd($processedDocs);
 
         array_unshift($processedDocs, $processedQuery);
+        // dd($processedDocs);
         $tfidfDocs = $this->calculateTfIdf($processedDocs);
 
         /** sesudah prosessing termasuk B-gram */
         // dd($processedDocs, $tfidfDocs);
 
         $tfidfQuery = $tfidfDocs[0];
-
         array_shift($tfidfDocs);
+
+        $tfidfDocsWithId = array_combine(array_keys($documents), $tfidfDocs);
 
         $similarities = [];
 
-        foreach ($tfidfDocs as $docId => $tfidfDoc) {
-            $similarities[$docId] = $this->cosineSimilarity($tfidfQuery, $tfidfDoc);
+        foreach ($tfidfDocsWithId as $id_buku => $tfidfDoc) {
+            $similarities[$id_buku] = $this->cosineSimilarity($tfidfQuery, $tfidfDoc);
         }
+
 
         arsort($similarities);
         /** Simailarity */
