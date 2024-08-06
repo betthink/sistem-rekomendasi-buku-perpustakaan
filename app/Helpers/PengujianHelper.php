@@ -83,6 +83,7 @@ class PengujianHelper
         $recall = $this->recall($relevantRetrieved, $relevant);
         $fMeasure = $this->fMeasure($precision, $recall);
         $accuracy = $this->accuracy($relevantRetrieved, $retrieved, $relevant, $totalDocuments);
+        $accuracy = $this->accuracy($relevantRetrieved, $retrieved, $relevant, $totalDocuments);
 
         return [
             'precision' => $precision,

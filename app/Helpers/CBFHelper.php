@@ -119,6 +119,10 @@ class CBFHelper
         /** sesudah prosessing termasuk B-gram */
         // dd($processedDocs, $tfidfDocs);
 
+
+        /** sesudah prosessing termasuk B-gram */
+        // dd($processedDocs, $tfidfDocs);
+
         $tfidfQuery = $tfidfDocs[0];
         array_shift($tfidfDocs);
 
@@ -130,8 +134,10 @@ class CBFHelper
             $similarities[$id_buku] = $this->cosineSimilarity($tfidfQuery, $tfidfDoc);
         }
 
-
+        // dd($similarities);
         arsort($similarities);
+        /** Simailarity */
+        // dd($similarities);
         /** Simailarity */
         // dd($similarities);
 
